@@ -1,0 +1,7 @@
+> library(mapr)
+> library(raster)
+> library(spocc)
+> ursus <- occ(query='Ursus americanus', from='gbif')
+> df = as.data.frame(occ2df(ursus$gbif))
+> map_leaflet(ursus)
+> map_leaflet(df)

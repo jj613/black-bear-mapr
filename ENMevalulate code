@@ -1,0 +1,81 @@
+> spocc_download = occ(query ='Ursus americanus', from='gbif', limit=2000);
+> spocc_download
+Searched: gbif
+Occurrences - Found: 11,876, Returned: 2,000
+Search type: Scientific
+  gbif: Ursus americanus (2000)
+> library(dismo)
+> wc = getData('worldclim', var='bio', res=5)
+> 
+> wc = getData('worldclim', var='bio', res=5)
+> 
+> df = as.data.frame(occ2df(ursus$gbif))
+Error in occ2df(ursus$gbif) : object 'ursus' not found
+> spocc_downnload
+Error: object 'spocc_downnload' not found
+> wc = getData('worldclim' , var='bio' , res=5)
+> install.packages('ENMeval')
+Installing package into ‘C:/Users/jjthe_000/Documents/R/win-library/3.5’
+(as ‘lib’ is unspecified)
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.5/ENMeval_0.3.0.zip'
+Content type 'application/zip' length 1592650 bytes (1.5 MB)
+downloaded 1.5 MB
+
+package ‘ENMeval’ successfully unpacked and MD5 sums checked
+
+The downloaded binary packages are in
+	C:\Users\jjthe_000\AppData\Local\Temp\RtmpCowcFs\downloaded_packages
+> 
+> library(ENMeval)
+> library(raster)
+> occdat <- occ2df(spocc_download)
+> ext=extent(c(-100, -55, 20, 45))
+> predictors = crop(wc, ext)
+> plot(predictors[[1]])
+> points(occdat$longitude, occdat$latitude)
+> ext=extent(c(-160, -55, 20, 60))
+> predictors = crop(wc, ext)
+> plot(predictors[[1]])
+> points(occdat$longitude, occdat$latitude)
+> loc=occdat[,c('longitude', 'latitude')]
+> extr = extract(predictors, loc)
+> loc = loc[!is.na(extr[,1]),]
+> eval = ENMevaluate(occ=as.data.frame(loc), env = predictors, method='block', parallel=FALSE, fc=c("L", "LQ"), RMvalues=seq(0.5, 2, 0.5), rasterPreds=T)
+*** Running ENMevaluate using maxnet v.0.1.2 ***
+Doing evaluations using spatial blocks...
+  |==============================================================================================================| 100%
+ENMeval completed in 2 minutes 27.9 seconds.
+> 
+> eval@results
+  settings features  rm train.AUC avg.test.AUC var.test.AUC avg.diff.AUC var.diff.AUC avg.test.orMTP var.test.orMTP
+1    L_0.5        L 0.5 0.7834530    0.7594674   0.02357396   0.06523649  0.009270861    0.002169197   1.882167e-05
+2   LQ_0.5       LQ 0.5 0.8310290    0.7893609   0.01980651   0.07091527  0.010018994    0.003247927   2.654535e-05
+3      L_1        L 1.0 0.7839284    0.7600851   0.02529218   0.06643097  0.011135960    0.001626898   1.058719e-05
+4     LQ_1       LQ 1.0 0.8258471    0.7856574   0.01865942   0.07336048  0.006950459    0.004331352   3.748058e-05
+5    L_1.5        L 1.5 0.7836434    0.7610700   0.02647489   0.06524747  0.012203487    0.001626898   1.058719e-05
+6   LQ_1.5       LQ 1.5 0.8209176    0.7858822   0.01729887   0.06872596  0.005089873    0.003792574   1.997261e-05
+7      L_2        L 2.0 0.7832903    0.7583618   0.02838933   0.06787704  0.013578556    0.001626898   1.058719e-05
+8     LQ_2       LQ 2.0 0.8161854    0.7866272   0.01838674   0.06417541  0.006082097    0.003792574   1.997261e-05
+  avg.test.or10pct var.test.or10pct     AICc delta.AICc         w.AIC parameters
+1        0.1142996      0.004481553 43856.10  1029.9641 2.218953e-224         13
+2        0.1786923      0.015845072 42826.14     0.0000  1.000000e+00         28
+3        0.1170158      0.006051439 43897.90  1071.7629 1.860514e-233         12
+4        0.1521948      0.008775242 43044.03   217.8944  4.839950e-48         23
+5        0.1105070      0.006118137 43919.50  1093.3627 3.795772e-238         10
+6        0.1424522      0.007627587 43169.27   343.1344  3.085410e-75         18
+7        0.1105035      0.005665684 43944.46  1118.3239 1.442313e-243          9
+8        0.1180910      0.004548834 43276.84   450.7063  1.350088e-98         16
+> which(eval@results$AICc == min(eval@results$AICc))
+[1] 2
+> 
+> which(eval@results$avg.test.AUC== max(eval@results$avg.test.AUC))
+[1] 2
+> 
+> best=which(eval@results$AICc == min(eval@results$AICc))
+> plot(eval@predictions[[best]])
+> points(as.data.frame(loc), pch=20, cex =0.1)
+> est.loc = extract(eval@predictions[[best]], as.data.frame(loc))
+> est.bg = extract(eval@predictions[[best]], eval@bg.pts)
+> ev = evaluate(est.loc, est.bg)
+> thr = threshold(ev)
+> plot(eval@predictions[[best]] > thr$equal_sens_spec, col = c('lightgrey', 'black'))
